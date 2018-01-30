@@ -1,0 +1,11 @@
+<RCC>
+    <qresource prefix="/">
+        <file>main.qml</file>
+        <file>qtquickcontrols2.conf</file>
+        <file>entypo.ttf</file>
+        <file>AppToolBar.qml</file>
+        <file>AppStatusBar.qml</file>
+        <file>MyButton.qml</file>
+        <file>ListViewDelegate.qml</file>
+    </qresource>
+</RCC>
