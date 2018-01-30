@@ -18,30 +18,9 @@ public:
     virtual void connectDevice();
     virtual void disconnectDevice();
 
-    virtual bool isConnecting() const {}
-    virtual bool isConnected() const {}
-
 public slots:
-    virtual void connectResult();
+    virtual void connectResult(const bool& status);
     virtual void writeData(const QByteArray& data) {}
-
-    // QLowEnergyController realted
-    void deviceConnected() {}
-    void errorReceived(QLowEnergyController::Error) {}
-    void deviceDisconnected() {}
-
-//    virtual void deviceStateChanged(QLowEnergyController::ControllerState state) {}
-
-    void lowEnergyServiceDiscovered(const QBluetoothUuid &uuid) {}
-    void serviceScanDone() {}
-
-    // QLowEnergyService related
-    void serviceDetailsDiscovered(QLowEnergyService::ServiceState newState) {}
-
-    // characteristics related
-    virtual void mycharacteristicsUpdated(const QLowEnergyCharacteristic &c, const QByteArray &value) {}
-    void mycharacteristicRead(const QLowEnergyCharacteristic &info, const QByteArray &value) {};
-    void mycharacteristicWritten(const QLowEnergyCharacteristic &info, const QByteArray &value) {};
 
 private:
     QString myAddress;

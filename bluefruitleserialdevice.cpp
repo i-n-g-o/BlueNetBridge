@@ -9,8 +9,6 @@ const QBluetoothUuid BluefruitLESerialDevice::ServiceId = QBluetoothUuid(QString
 BluefruitLESerialDevice::BluefruitLESerialDevice(const QBluetoothDeviceInfo &d) : DeviceInfo(d)
   ,controller(0)
   ,m_service(0)
-  ,connecting(false)
-  ,connected(false)
 {
     // set device
     messageReceiver.setDevice(this);
@@ -47,9 +45,9 @@ void BluefruitLESerialDevice::connectDevice() {
 
     // service discovery
     connect(controller, &QLowEnergyController::serviceDiscovered,
-            this, &DeviceInfo::lowEnergyServiceDiscovered);
+            this, &BluefruitLESerialDevice::lowEnergyServiceDiscovered);
     connect(controller, &QLowEnergyController::discoveryFinished,
-            this, &DeviceInfo::serviceScanDone);
+            this, &BluefruitLESerialDevice::serviceScanDone);
 
 
 //    if (isRandomAddress()) {
@@ -61,14 +59,10 @@ void BluefruitLESerialDevice::connectDevice() {
 
     // start a watchdog
     // if device is blocked by other host, we would try to connect indefinetly
-
-//    QTimer watchdog;
-//    qDebug() << ".....";/*
-//    QTimer::singleShot(10000, this, SLOT(BluefruitLESerialDevice::*/watchdogTimeout()));
+    QTimer::singleShot(10000, this, SLOT(watchdogTimeout()));
 
 
-    connecting = true;
-    emit connectedChanged();
+    setConnecting(true);
 }
 
 void BluefruitLESerialDevice::disconnectDevice() {
@@ -84,26 +78,14 @@ void BluefruitLESerialDevice::disconnectDevice() {
         m_service = 0;
     }
 
-    connecting = false;
-    connected = false;
-
-    emit connectedChanged();
+    setConnected(false);
 }
 
 
-bool BluefruitLESerialDevice::isConnecting() const
-{
-    return connecting;
-}
-
-bool BluefruitLESerialDevice::isConnected() const
-{
-    return connected;
-}
-
-void watchdogTimeout()
+void BluefruitLESerialDevice::watchdogTimeout()
 {
     qDebug() << "TIMEROUT!!!!";
+    disconnectDevice();
 }
 
 
@@ -128,6 +110,8 @@ void BluefruitLESerialDevice::deviceConnected()
 void BluefruitLESerialDevice::errorReceived(QLowEnergyController::Error error)
 {
     qDebug() << "ERROR: " << error;
+
+
 }
 
 
@@ -138,9 +122,10 @@ void BluefruitLESerialDevice::deviceDisconnected() {
     delete controller;
     controller = 0;
 
-    connecting = false;
-    connected = false;
-    emit connectedChanged();
+    setConnected(false);
+
+    // if autoreconnect?
+    connectDevice();
 }
 
 
@@ -172,19 +157,19 @@ void BluefruitLESerialDevice::lowEnergyServiceDiscovered(const QBluetoothUuid &u
     if (m_service->state() == QLowEnergyService::DiscoveryRequired) {
 
         connect(m_service, &QLowEnergyService::stateChanged,
-                this, &DeviceInfo::serviceDetailsDiscovered);
+                this, &BluefruitLESerialDevice::serviceDetailsDiscovered);
 
         // get characteristic updates
         connect(m_service,
                 &QLowEnergyService::characteristicChanged,
                 this,
-                &DeviceInfo::mycharacteristicsUpdated);
+                &BluefruitLESerialDevice::mycharacteristicsUpdated);
 
         // get info about read/write
         connect(m_service, &QLowEnergyService::characteristicRead,
-                this, &DeviceInfo::mycharacteristicRead);
+                this, &BluefruitLESerialDevice::mycharacteristicRead);
         connect(m_service, &QLowEnergyService::characteristicWritten,
-                this, &DeviceInfo::mycharacteristicWritten);
+                this, &BluefruitLESerialDevice::mycharacteristicWritten);
 
 //        connect(service, &QLowEnergyService::descriptorRead,
 //                this, &Device::descriptorRead);
@@ -210,9 +195,7 @@ void BluefruitLESerialDevice::serviceScanDone()
 
     if (!m_service) {
         // no service???
-        connecting = false;
-        connected = false;
-        emit connectedChanged();
+        setConnected(false);
     }
 }
 
@@ -277,12 +260,7 @@ void BluefruitLESerialDevice::serviceDetailsDiscovered(QLowEnergyService::Servic
     }
 
     if (writeCharacteristic.isValid()) {
-        connecting = false;
-        connected = true;
-        emit connectedChanged();
-
-        // store connection somwhere
-
+        setConnected(true);
     } else {
         qDebug("write characteristic not valid!! - abort");
         disconnectDevice();

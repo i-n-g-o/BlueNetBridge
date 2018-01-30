@@ -2,47 +2,51 @@ import QtQuick 2.9
 import QtQuick.Controls 1.4
 import QtQuick.Controls.Styles 1.4
 import QtQuick.Window 2.2
+import QtQuick.Layouts 1.3
 
 StatusBar {
 
     id: statusbar
     height: Screen.pixelDensity * 15
 
+    Row {
 
-    MyButton {
-        id: roundButton
-        width: parent.height
-        height: parent.height
+        anchors.fill: parent
+        spacing: 10
 
-        text: "+"
+        MyButton {
+            width: parent.height
+            height: parent.height
 
-        anchors.left: parent.left
-        anchors.leftMargin: 6
-        anchors.bottom: parent.bottom
-        anchors.bottomMargin: 6
-        anchors.verticalCenter: parent.verticalCenter
+            text: "+"
 
-        onClicked: {
-            console.log("aaaa");
-            device.addSomething();
+            onClicked: {
+                console.log("aaaa");
+                device.addSomething();
+            }
         }
-    }
 
 
-    MyButton {
-        id: dialogopen
-        width: parent.height
-        height: parent.height
+        MyButton {
+            width: parent.height
+            height: parent.height
 
-        text: "open"
+            text: "open"
 
-        anchors.left: roundButton.right
-        anchors.leftMargin: 10
-        anchors.top: roundButton.top
-        anchors.verticalCenter: parent.verticalCenter
+            onClicked: {
+                messageDialog.open()
+            }
+        }
 
-        onClicked: {
-            messageDialog.open()
+        MyButton {
+            width: parent.height
+            height: parent.height
+
+            text: "clear"
+
+            onClicked: {
+                device.clearSettings();
+            }
         }
     }
 }

@@ -11,6 +11,13 @@ int main(int argc, char *argv[])
     QCoreApplication::setAttribute(Qt::AA_EnableHighDpiScaling);
 #endif
 
+    //
+//    QCoreApplication::setOrganizationDomain("");
+    QCoreApplication::setOrganizationName("i-n-g-o");
+    QCoreApplication::setApplicationName("BLEBridge");
+
+    QSettings::setDefaultFormat(QSettings::NativeFormat);
+
     QGuiApplication app(argc, argv);
 
     appController appCtrl;
@@ -33,10 +40,11 @@ int main(int argc, char *argv[])
         return -1;
     }
 
+    // this a setting??
     // start discovery
-    if (!deviceController.startDeviceDiscovery()) {
-        qDebug() << "did not start discovery";
-    }
+//    if (!deviceController.startDeviceDiscovery()) {
+//        qDebug() << "did not start discovery";
+//    }
 
     return app.exec();
 }

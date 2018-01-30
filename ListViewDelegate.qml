@@ -10,9 +10,7 @@ Rectangle {
     height: 80
     width: parent.width
 
-    property bool itemSelected: false
-
-    color: enabled ? (itemSelected ? (modelData.connected ? "red" : "lightsteelblue") : "darkgray") : "lightgray"
+    color: enabled ? ( (modelData.connected ? "green" : "lightsteelblue") ) : "lightgray"
 
     border.width: 1
     border.color: "darkgray"
@@ -20,11 +18,12 @@ Rectangle {
 
     MouseArea {
         anchors.fill: parent
-
         onClicked: {
-            itemSelected = !itemSelected
-            device.trackDevice(modelData.deviceAddress, itemSelected);
-            console.log("click: " + modelData.deviceName)
+            if (!modelData.connected) {
+                device.connectDevice(modelData.deviceAddress);
+            } else {
+                device.disconnectDevice(modelData.deviceAddress);
+            }
         }
     }
 

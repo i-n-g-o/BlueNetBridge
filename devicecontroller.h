@@ -5,6 +5,7 @@
 #include <QList>
 #include <QLowEnergyController>
 #include <QBluetoothDeviceDiscoveryAgent>
+#include <QSettings>
 
 #include "deviceinfo.h"
 
@@ -33,7 +34,11 @@ signals:
 public slots:
     bool startDeviceDiscovery();
     void addSomething();
-    void trackDevice(QString deviceId, bool doTrack);
+    void connectDevice(QString deviceId);
+    void disconnectDevice(QString deviceId);
+
+    // settings
+    void clearSettings();
 
 private slots:
     // QBluetoothDeviceDiscoveryAgent related
@@ -48,13 +53,19 @@ Q_SIGNALS:
 
 private:
     void setUpdate(QString message);
+    void writeSettings();
+    void readSettings();
+    void executeDevice(const QString& deviceAddress, void (*func)(DeviceInfo* di));
+    bool containsDevice(const QString& deviceAddress) const;
+
 
     QBluetoothDeviceDiscoveryAgent *discoveryAgent;
     QLowEnergyController *controller;
 
-    QList<QObject*> devices;
+    QSettings settings;
+    QStringList shouldConnectDevices;
 
-    bool connected;
+    QList<QObject*> devices;
     bool scanning;
 
 };

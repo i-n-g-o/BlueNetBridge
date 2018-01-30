@@ -27,14 +27,14 @@ public:
     virtual void connectDevice();
     virtual void disconnectDevice();
 
-    virtual bool isConnecting() const;
-    virtual bool isConnected() const;
-
 
 public slots:
-    virtual void connectResult() {}
-    virtual void writeData(const QByteArray& data);
+    virtual void connectResult(const bool& status) {
+        qDebug() << "BluefruitLESerialDevice::connectResult: " << status;
+    }
+    virtual void writeData(const QByteArray& data);    
 
+private slots:
     // QLowEnergyController realted
     void deviceConnected();
     void errorReceived(QLowEnergyController::Error);
@@ -54,8 +54,6 @@ public slots:
     void mycharacteristicRead(const QLowEnergyCharacteristic &info, const QByteArray &value);
     void mycharacteristicWritten(const QLowEnergyCharacteristic &info, const QByteArray &value);
 
-
-public slots:
     void watchdogTimeout();
 
 private:
@@ -64,9 +62,6 @@ private:
     QLowEnergyCharacteristic writeCharacteristic;
 
     MessageReceiver messageReceiver;
-
-    bool connecting;
-    bool connected;
 
 };
 

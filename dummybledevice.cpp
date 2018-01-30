@@ -11,16 +11,22 @@ DummyBLEDevice::DummyBLEDevice()
     myName = "Dummy: " + QString::number(randomValue);
 }
 
+
+
 void DummyBLEDevice::connectDevice() {
+
     qDebug() << "DummyBLEDevice::connect()" << getName();
 
-    QTimer timer;
-    timer.singleShot(1000, this, SLOT(connectResult()));
-    timer.start();
+    bool result = (qrand() % 100) > 50;
+    QTimer::singleShot(2000, this, [this, result]{ connectResult(result); });
+
+    setConnecting(true);
 }
 
 void DummyBLEDevice::disconnectDevice() {
     qDebug() << "DummyBLEDevice::disconnect()" << getName();
+
+    setConnected(false);
 }
 
 
@@ -35,12 +41,9 @@ QString DummyBLEDevice::getName() const
 }
 
 
-void DummyBLEDevice::connectResult()
+void DummyBLEDevice::connectResult(const bool& status)
 {
-    int randomValue = qrand() % 100;
-    if (randomValue > 50) {
-        qDebug() << "result true";
-    } else {
-        qDebug() << "result failed";
-    }
+    qDebug() << "DummyBLEDevice::connectResult: " << status;
+
+    setConnected(status);
 }

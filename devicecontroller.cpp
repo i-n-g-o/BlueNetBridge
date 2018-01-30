@@ -21,6 +21,12 @@ DeviceController::DeviceController(QObject *parent) : QObject(parent)
             this, &DeviceController::deviceScanFinished);
     connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::canceled,
             this, &DeviceController::deviceScanCanceled);
+
+
+    settings.setFallbacksEnabled(false);
+    readSettings();
+    qDebug() << "settings: " << settings.fileName();
+    qDebug() << "try to autoconnect: " << shouldConnectDevices;
 }
 
 
@@ -34,6 +40,18 @@ DeviceController::~DeviceController()
 
     devices.clear();
 }
+
+void DeviceController::readSettings()
+{
+    shouldConnectDevices.clear();
+    int size = settings.beginReadArray("devices");
+    for (int i = 0; i < size; ++i) {
+        settings.setArrayIndex(i);
+        shouldConnectDevices.append(settings.value("device").toString());
+    }
+    settings.endArray();
+}
+
 
 QVariant DeviceController::getDevices()
 {
@@ -54,26 +72,87 @@ void DeviceController::setUpdate(QString message)
 
 
 void DeviceController::addSomething()
-{    
-    DeviceInfo *d = new DummyBLEDevice();
+{
+    DummyBLEDevice *d = new DummyBLEDevice();
     devices.append(d);
 
     emit devicesUpdated();
 }
 
-void DeviceController::trackDevice(QString deviceId, bool doTrack)
+void DeviceController::connectDevice(QString deviceId)
 {
-    qDebug() << "track: " << deviceId << " : " << doTrack;
+    executeDevice(deviceId, [](DeviceInfo* di){ di->connectDevice(); });
 
-    // get device from list
-    for (QObject* obj : devices) {
-        DeviceInfo* di = dynamic_cast<DeviceInfo*>(obj);
-        if (di->getAddress() == deviceId) {
-            di->setTracking(doTrack);
-            break;
-        }
+    if (!shouldConnectDevices.contains(deviceId)) {
+        shouldConnectDevices.append(deviceId);
+        writeSettings();
     }
 }
+
+void DeviceController::disconnectDevice(QString deviceId)
+{
+    executeDevice(deviceId, [](DeviceInfo* di){ di->disconnectDevice(); });
+
+    if (shouldConnectDevices.contains(deviceId)) {
+        shouldConnectDevices.removeAll(deviceId);
+        writeSettings();
+    }
+}
+
+void DeviceController::writeSettings()
+{
+    settings.beginWriteArray("devices");
+    for (int i = 0; i < shouldConnectDevices.size(); ++i) {
+        settings.setArrayIndex(i);
+        settings.setValue("device", shouldConnectDevices[i]);
+    }
+    settings.endArray();
+
+    settings.sync();
+}
+
+void DeviceController::clearSettings()
+{
+    qDebug() << "clearing settings";
+    shouldConnectDevices.clear();
+    settings.clear();
+    settings.sync();
+}
+
+/**
+ * @brief DeviceController::executeDevice
+ *      lookup a device with an address and execute call function
+ *
+ * @param deviceAddress
+ */
+void DeviceController::executeDevice(const QString& deviceAddress, void (*func)(DeviceInfo* di))
+{
+    if (!func) {
+        return;
+    }
+
+    for (QObject* obj : devices) {
+        DeviceInfo* di = dynamic_cast<DeviceInfo*>(obj);
+        if (di->getAddress() == deviceAddress) {
+            return func(di);
+        }
+    }
+
+    qDebug() << "could not find device with id: " << deviceAddress;
+}
+
+bool DeviceController::containsDevice(const QString& deviceAddress) const
+{
+    for (QObject* obj : devices) {
+        DeviceInfo* di = dynamic_cast<DeviceInfo*>(obj);
+        if (di->getAddress() == deviceAddress) {
+            return true;
+        }
+    }
+
+    return false;
+}
+
 
 
 /*
@@ -97,11 +176,6 @@ bool DeviceController::startDeviceDiscovery()
 
     qDeleteAll(devices);
     devices.clear();
-
-//    const QBluetoothDeviceInfo info(QBluetoothAddress(QString("123")), "TEST TEST", 1);
-//    DeviceInfo *d = new DeviceInfo(info);
-//    devices.append(d);
-
     emit devicesUpdated();
 
     setUpdate("Scanning for devices ...");
@@ -133,15 +207,19 @@ void DeviceController::deviceDiscovered(const QBluetoothDeviceInfo &info)
             // only accept devices which have service with uuid: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
             if (info.serviceUuids().contains(BluefruitLESerialDevice::ServiceId)) {
 
-                DeviceInfo *d = new BluefruitLESerialDevice(info);
-                devices.append(d);
+                if (!containsDevice(DeviceInfo::getAddress(info))) {
 
-                emit devicesUpdated();
+                    DeviceInfo *d = new BluefruitLESerialDevice(info);
+                    devices.append(d);
+                    emit devicesUpdated();
 
-                qDebug() << "Last device added: " << d->getName() <<
-                            " : " << d->getAddress() <<
-                            " : " << d->getDevice().rssi() <<
-                            " : " << d->getDevice().serviceUuids();
+                    qDebug() << "Last device added: " << d->getName() <<
+                                " : " << d->getAddress() <<
+                                " : " << d->getDevice().rssi() <<
+                                " : " << d->getDevice().serviceUuids();
+                }
+
+
             } else {
                 qDebug() << "other device with services: " << info.serviceUuids();
             }
@@ -154,23 +232,20 @@ void DeviceController::deviceDiscovered(const QBluetoothDeviceInfo &info)
 
 void DeviceController::deviceScanFinished()
 {
-    // should never happen??
     qDebug() << "deviceScanFinished!!";
 
     scanning = false;
     emit devicesUpdated();
     emit stateChanged();
-//    m_deviceScanState = false;
-//
-//    if (devices.isEmpty()) {
-//        setUpdate("No matching Low Energy devices found...");
-//        QCoreApplication::quit();
-//    } else {
-//        setUpdate("Done! Scan Again!");
 
-//        // start service discovery
-//        scanServices(currentDevice.getDevice().address().toString());
-//    }
+    // check settings, if we should connect to something
+    if (devices.size() > 0 && shouldConnectDevices.size() > 0) {
+
+        for (QString& deviceId : shouldConnectDevices) {
+            qDebug() << "trying to autoconnect to: " << deviceId;
+            executeDevice(deviceId, [](DeviceInfo* di) { di->connectDevice(); });
+        }
+    }
 }
 
 void DeviceController::deviceScanCanceled()
@@ -195,6 +270,5 @@ void DeviceController::deviceScanError(QBluetoothDeviceDiscoveryAgent::Error err
     } else  {
         qDebug() << discoveryAgent->errorString();
         setUpdate("An unknown error has occurred.");
-        QCoreApplication::quit();
     }
 }
