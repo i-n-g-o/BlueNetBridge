@@ -21,7 +21,6 @@ int main(int argc, char *argv[])
     QGuiApplication app(argc, argv);
 
     appController appCtrl;
-
     QObject::connect(&app,
                      SIGNAL(applicationStateChanged(Qt::ApplicationState)),
                      &appCtrl,
@@ -42,9 +41,7 @@ int main(int argc, char *argv[])
 
     // this a setting??
     // start discovery
-//    if (!deviceController.startDeviceDiscovery()) {
-//        qDebug() << "did not start discovery";
-//    }
+    deviceController.startDeviceDiscovery();
 
     return app.exec();
 }

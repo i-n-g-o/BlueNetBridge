@@ -5,26 +5,29 @@
 #include <QNetworkAccessManager>
 #include <QNetworkReply>
 
-#include "deviceinfo.h"
+#include "bleserialdevice.h"
 
 class MessageReceiver : public QObject
 {
     Q_OBJECT
 public:
-    MessageReceiver();
-    MessageReceiver(DeviceInfo* device);
+    static const QByteArray defaultPacketTerminatorIn;
+    static const QByteArray defaultPacketTerminatorOut;
 
-    DeviceInfo* getDevice() {
-        return m_device;
-    }
-    void setDevice(DeviceInfo* device) {
-        m_device = device;
-    }
+    MessageReceiver();
+
+    void setPacketTerminatorIn(const QByteArray& pt) { packetTerminatorIn = pt; }
+    const QByteArray& getPacketTerminatorIn() const { return packetTerminatorIn; }
+
+    void setPacketTerminatorOut(const QByteArray& pt) { packetTerminatorOut = pt; }
+    const QByteArray& getPacketTerminatorOut() const { return packetTerminatorOut; }
+
 
 signals:
+    void data(const QByteArray& data);
 
 public slots:
-    void messageReceived(QString value);
+    void dataReceived(const QByteArray& value);
 
     // http request
     void httpReadyRead();
@@ -33,14 +36,18 @@ public slots:
 
 private:
     void startRequest(const QUrl &requestedUrl);
+    void dataToDevice(const QByteArray& data);
 
-    QString packet;
+    QByteArray packet;
 
     QUrl url;
     QNetworkAccessManager qnam;
     QNetworkReply *reply;
 
-    DeviceInfo* m_device;
+    bool sendResponse;
+
+    QByteArray packetTerminatorIn;
+    QByteArray packetTerminatorOut;
 };
 
 #endif // MESSAGERECEIVER_H

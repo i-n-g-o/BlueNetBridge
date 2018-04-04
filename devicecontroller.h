@@ -7,7 +7,7 @@
 #include <QBluetoothDeviceDiscoveryAgent>
 #include <QSettings>
 
-#include "deviceinfo.h"
+#include "bleserialdevice.h"
 
 /* object handles:
  * - device lookup (callback for new BLE devices)
@@ -33,7 +33,7 @@ signals:
 
 public slots:
     bool startDeviceDiscovery();
-    void addSomething();
+    void addDummyDevice();
     void connectDevice(QString deviceId);
     void disconnectDevice(QString deviceId);
 
@@ -52,10 +52,11 @@ Q_SIGNALS:
     void stateChanged();
 
 private:
+    void setupBLEController();
     void setUpdate(QString message);
     void writeSettings();
     void readSettings();
-    void executeDevice(const QString& deviceAddress, void (*func)(DeviceInfo* di));
+    void executeDevice(const QString& deviceAddress, void (*func)(BLESerialDevice* di));
     bool containsDevice(const QString& deviceAddress) const;
 
 

@@ -41,9 +41,9 @@
 
 #include <qbluetoothuuid.h>
 
-#include "deviceinfo.h"
+#include "bleserialdevice.h"
 
-QString DeviceInfo::getAddress(const QBluetoothDeviceInfo &d)
+QString BLESerialDevice::getAddress(const QBluetoothDeviceInfo &d)
 {
 #ifdef Q_OS_MAC
     // On OS X and iOS we do not have addresses,
@@ -55,27 +55,27 @@ QString DeviceInfo::getAddress(const QBluetoothDeviceInfo &d)
 }
 
 
-DeviceInfo::DeviceInfo() :
+BLESerialDevice::BLESerialDevice() :
     connecting(false)
     ,connected(false)
 {}
 
-DeviceInfo::DeviceInfo(const QBluetoothDeviceInfo &d) : DeviceInfo()
+BLESerialDevice::BLESerialDevice(const QBluetoothDeviceInfo &d) : BLESerialDevice()
 {
     device = d;
 }
 
-QString DeviceInfo::getAddress() const
+QString BLESerialDevice::getAddress() const
 {
-    return DeviceInfo::getAddress(device);
+    return BLESerialDevice::getAddress(device);
 }
 
-QString DeviceInfo::getName() const
+QString BLESerialDevice::getName() const
 {
     return device.name();
 }
 
-QBluetoothDeviceInfo DeviceInfo::getDevice()
+QBluetoothDeviceInfo BLESerialDevice::getDevice()
 {
     return device;
 }

@@ -8,9 +8,7 @@
 #include <QLowEnergyController>
 #include <QTimer>
 
-#include "deviceinfo.h"
-
-class DeviceInfo: public QObject
+class BLESerialDevice: public QObject
 {
     Q_OBJECT
     Q_PROPERTY(QString deviceName READ getName NOTIFY deviceChanged)
@@ -21,8 +19,11 @@ class DeviceInfo: public QObject
 public:
     static QString getAddress(const QBluetoothDeviceInfo &d);
 
-    DeviceInfo();
-    DeviceInfo(const QBluetoothDeviceInfo &d);
+    BLESerialDevice();
+    BLESerialDevice(const QBluetoothDeviceInfo &d);
+    virtual ~BLESerialDevice() {
+        qDebug() << "----------- ~DeviceInfo";
+    }
 
     virtual QString getAddress() const;
     virtual QString getName() const;
@@ -39,7 +40,7 @@ public:
     //void setDevice(const QBluetoothDeviceInfo &dev);
 
     virtual void connectDevice() = 0;
-    virtual void disconnectDevice() = 0;
+    virtual void disconnectDevice() = 0;    
 
 protected:
     void setConnecting(const bool& status) {
@@ -58,6 +59,7 @@ protected:
 public slots:
     virtual void connectResult(const bool& status) = 0;
     virtual void writeData(const QByteArray& data) = 0;
+    virtual void testDevice() = 0;
 
 
 Q_SIGNALS:

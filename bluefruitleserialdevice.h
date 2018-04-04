@@ -4,7 +4,7 @@
 #include <QBluetoothUuid>
 #include <QLowEnergyController>
 
-#include "deviceinfo.h"
+#include "bleserialdevice.h"
 #include "messagereceiver.h"
 
 
@@ -14,7 +14,7 @@
  *
  */
 
-class BluefruitLESerialDevice : public DeviceInfo
+class BluefruitLESerialDevice : public BLESerialDevice
 {
 
 public:
@@ -25,14 +25,15 @@ public:
 
     // deviceInfo interface
     virtual void connectDevice();
-    virtual void disconnectDevice();
+    virtual void disconnectDevice();        
 
 
 public slots:
     virtual void connectResult(const bool& status) {
         qDebug() << "BluefruitLESerialDevice::connectResult: " << status;
     }
-    virtual void writeData(const QByteArray& data);    
+    virtual void writeData(const QByteArray& data);
+    virtual void testDevice();
 
 private slots:
     // QLowEnergyController realted
@@ -53,13 +54,20 @@ private slots:
     void mycharacteristicsUpdated(const QLowEnergyCharacteristic &c, const QByteArray &value);
     void mycharacteristicRead(const QLowEnergyCharacteristic &info, const QByteArray &value);
     void mycharacteristicWritten(const QLowEnergyCharacteristic &info, const QByteArray &value);
+    void serviceError(QLowEnergyService::ServiceError error);
 
     void watchdogTimeout();
 
-private:
+private:    
     QLowEnergyController* controller;
     QLowEnergyService* m_service;
     QLowEnergyCharacteristic writeCharacteristic;
+
+    QByteArray dataSending;
+    QByteArray dataToSend;
+
+    QTime startSending;
+    int bytessent;
 
     MessageReceiver messageReceiver;
 

@@ -3,28 +3,16 @@
 #include <QCoreApplication>
 
 #include "bluefruitleserialdevice.h"
-#include "dummybledevice.h"
+#include "bledummybledevice.h"
 
 DeviceController::DeviceController(QObject *parent) : QObject(parent)
 {
     scanning = false;
 
-    // forever searching discovery...?
-    discoveryAgent = new QBluetoothDeviceDiscoveryAgent();
-    discoveryAgent->setLowEnergyDiscoveryTimeout(10000);
-
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
-            this, &DeviceController::deviceDiscovered);
-    connect(discoveryAgent, QOverload<QBluetoothDeviceDiscoveryAgent::Error>::of(&QBluetoothDeviceDiscoveryAgent::error),
-            this, &DeviceController::deviceScanError);
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished,
-            this, &DeviceController::deviceScanFinished);
-    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::canceled,
-            this, &DeviceController::deviceScanCanceled);
-
+    setupBLEController();
 
     settings.setFallbacksEnabled(false);
-    readSettings();
+    readSettings();    
     qDebug() << "settings: " << settings.fileName();
     qDebug() << "try to autoconnect: " << shouldConnectDevices;
 }
@@ -39,6 +27,22 @@ DeviceController::~DeviceController()
     qDeleteAll(devices);
 
     devices.clear();
+}
+
+void DeviceController::setupBLEController()
+{
+    // forever searching discovery...?
+    discoveryAgent = new QBluetoothDeviceDiscoveryAgent();
+    discoveryAgent->setLowEnergyDiscoveryTimeout(5000);
+
+    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::deviceDiscovered,
+            this, &DeviceController::deviceDiscovered);
+    connect(discoveryAgent, QOverload<QBluetoothDeviceDiscoveryAgent::Error>::of(&QBluetoothDeviceDiscoveryAgent::error),
+            this, &DeviceController::deviceScanError);
+    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::finished,
+            this, &DeviceController::deviceScanFinished);
+    connect(discoveryAgent, &QBluetoothDeviceDiscoveryAgent::canceled,
+            this, &DeviceController::deviceScanCanceled);
 }
 
 void DeviceController::readSettings()
@@ -71,9 +75,9 @@ void DeviceController::setUpdate(QString message)
 }
 
 
-void DeviceController::addSomething()
+void DeviceController::addDummyDevice()
 {
-    DummyBLEDevice *d = new DummyBLEDevice();
+    BLEDummyDevice *d = new BLEDummyDevice();
     devices.append(d);
 
     emit devicesUpdated();
@@ -81,7 +85,7 @@ void DeviceController::addSomething()
 
 void DeviceController::connectDevice(QString deviceId)
 {
-    executeDevice(deviceId, [](DeviceInfo* di){ di->connectDevice(); });
+    executeDevice(deviceId, [](BLESerialDevice* di){ di->connectDevice(); });
 
     if (!shouldConnectDevices.contains(deviceId)) {
         shouldConnectDevices.append(deviceId);
@@ -91,7 +95,7 @@ void DeviceController::connectDevice(QString deviceId)
 
 void DeviceController::disconnectDevice(QString deviceId)
 {
-    executeDevice(deviceId, [](DeviceInfo* di){ di->disconnectDevice(); });
+    executeDevice(deviceId, [](BLESerialDevice* di){ di->disconnectDevice(); });
 
     if (shouldConnectDevices.contains(deviceId)) {
         shouldConnectDevices.removeAll(deviceId);
@@ -125,14 +129,14 @@ void DeviceController::clearSettings()
  *
  * @param deviceAddress
  */
-void DeviceController::executeDevice(const QString& deviceAddress, void (*func)(DeviceInfo* di))
+void DeviceController::executeDevice(const QString& deviceAddress, void (*func)(BLESerialDevice* di))
 {
     if (!func) {
         return;
     }
 
     for (QObject* obj : devices) {
-        DeviceInfo* di = dynamic_cast<DeviceInfo*>(obj);
+        BLESerialDevice* di = dynamic_cast<BLESerialDevice*>(obj);
         if (di->getAddress() == deviceAddress) {
             return func(di);
         }
@@ -144,7 +148,7 @@ void DeviceController::executeDevice(const QString& deviceAddress, void (*func)(
 bool DeviceController::containsDevice(const QString& deviceAddress) const
 {
     for (QObject* obj : devices) {
-        DeviceInfo* di = dynamic_cast<DeviceInfo*>(obj);
+        BLESerialDevice* di = dynamic_cast<BLESerialDevice*>(obj);
         if (di->getAddress() == deviceAddress) {
             return true;
         }
@@ -171,12 +175,17 @@ bool DeviceController::containsDevice(const QString& deviceAddress) const
 bool DeviceController::startDeviceDiscovery()
 {
     if (scanning) {
+        qDebug() << "already scanning";
         return false;
     }
 
     qDeleteAll(devices);
     devices.clear();
     emit devicesUpdated();
+
+    if (discoveryAgent == nullptr) {
+        setupBLEController();
+    }
 
     setUpdate("Scanning for devices ...");
 
@@ -187,11 +196,13 @@ bool DeviceController::startDeviceDiscovery()
     if (discoveryAgent->isActive()) {
         scanning = true;
         Q_EMIT stateChanged();
-    } else {
-        qDebug() << "discover agent did not start";
+        return discoveryAgent->isActive();
     }
 
-    return discoveryAgent->isActive();
+    qDebug() << "discover agent did not start";
+    delete discoveryAgent;
+    discoveryAgent = nullptr;
+    return false;
 }
 
 // callbacks
@@ -207,9 +218,9 @@ void DeviceController::deviceDiscovered(const QBluetoothDeviceInfo &info)
             // only accept devices which have service with uuid: 6e400001-b5a3-f393-e0a9-e50e24dcca9e
             if (info.serviceUuids().contains(BluefruitLESerialDevice::ServiceId)) {
 
-                if (!containsDevice(DeviceInfo::getAddress(info))) {
+                if (!containsDevice(BLESerialDevice::getAddress(info))) {
 
-                    DeviceInfo *d = new BluefruitLESerialDevice(info);
+                    BLESerialDevice *d = new BluefruitLESerialDevice(info);
                     devices.append(d);
                     emit devicesUpdated();
 
@@ -243,7 +254,7 @@ void DeviceController::deviceScanFinished()
 
         for (QString& deviceId : shouldConnectDevices) {
             qDebug() << "trying to autoconnect to: " << deviceId;
-            executeDevice(deviceId, [](DeviceInfo* di) { di->connectDevice(); });
+            executeDevice(deviceId, [](BLESerialDevice* di) { di->connectDevice(); });
         }
     }
 }

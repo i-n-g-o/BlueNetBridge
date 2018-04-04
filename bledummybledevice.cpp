@@ -1,9 +1,9 @@
-#include "dummybledevice.h"
+#include "bledummybledevice.h"
 
 #include <QUuid>
 #include <QTimer>
 
-DummyBLEDevice::DummyBLEDevice()
+BLEDummyDevice::BLEDummyDevice()
 {
     myAddress = QUuid::createUuid().toString();
 
@@ -13,7 +13,7 @@ DummyBLEDevice::DummyBLEDevice()
 
 
 
-void DummyBLEDevice::connectDevice() {
+void BLEDummyDevice::connectDevice() {
 
     qDebug() << "DummyBLEDevice::connect()" << getName();
 
@@ -23,25 +23,25 @@ void DummyBLEDevice::connectDevice() {
     setConnecting(true);
 }
 
-void DummyBLEDevice::disconnectDevice() {
+void BLEDummyDevice::disconnectDevice() {
     qDebug() << "DummyBLEDevice::disconnect()" << getName();
 
     setConnected(false);
 }
 
 
-QString DummyBLEDevice::getAddress() const
+QString BLEDummyDevice::getAddress() const
 {
     return myAddress;
 }
 
-QString DummyBLEDevice::getName() const
+QString BLEDummyDevice::getName() const
 {
     return myName;
 }
 
 
-void DummyBLEDevice::connectResult(const bool& status)
+void BLEDummyDevice::connectResult(const bool& status)
 {
     qDebug() << "DummyBLEDevice::connectResult: " << status;
 

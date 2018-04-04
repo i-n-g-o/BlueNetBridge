@@ -5,18 +5,21 @@
 
 const QBluetoothUuid BluefruitLESerialDevice::ServiceId = QBluetoothUuid(QString("6e400001-b5a3-f393-e0a9-e50e24dcca9e"));
 
-
-BluefruitLESerialDevice::BluefruitLESerialDevice(const QBluetoothDeviceInfo &d) : DeviceInfo(d)
+BluefruitLESerialDevice::BluefruitLESerialDevice(const QBluetoothDeviceInfo &d) : BLESerialDevice(d)
   ,controller(0)
   ,m_service(0)
 {
     // set device
-    messageReceiver.setDevice(this);
+    connect(&messageReceiver,
+            &MessageReceiver::data,
+            this,
+            &BluefruitLESerialDevice::writeData);
 }
 
 BluefruitLESerialDevice::~BluefruitLESerialDevice()
 {
-   disconnectDevice();
+    qDebug() << "----------- ~BluefruitLESerialDevice";
+    disconnectDevice();
 }
 
 
@@ -81,6 +84,38 @@ void BluefruitLESerialDevice::disconnectDevice() {
     setConnected(false);
 }
 
+
+void BluefruitLESerialDevice::testDevice()
+{
+    QFile file("/Users/inx/Desktop/bewerbblock.txt");
+    file.open(QIODevice::ReadOnly);
+    QByteArray data = file.readAll();
+
+    if (!file.isOpen()) {
+        qDebug() << "file no open";
+        return;
+    }
+
+    qDebug() << "testing";
+
+//    qDebug() << "sending: " << data;
+
+//    QByteArray data("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+//    arr.append("1-2-3-4-5-6-7-8-9-10-11-12-13-14-15-16-17-18-19-20-21-22-23-24-25-26-27-28-29-30-31-32-33-34-35-36-37-38-39-40");
+
+    bytessent = 0;
+    startSending = QTime::currentTime();
+
+    writeData(data);
+}
 
 void BluefruitLESerialDevice::watchdogTimeout()
 {
@@ -156,8 +191,10 @@ void BluefruitLESerialDevice::lowEnergyServiceDiscovered(const QBluetoothUuid &u
 
     if (m_service->state() == QLowEnergyService::DiscoveryRequired) {
 
-        connect(m_service, &QLowEnergyService::stateChanged,
-                this, &BluefruitLESerialDevice::serviceDetailsDiscovered);
+        connect(m_service,
+                &QLowEnergyService::stateChanged,
+                this,
+                &BluefruitLESerialDevice::serviceDetailsDiscovered);
 
         // get characteristic updates
         connect(m_service,
@@ -171,10 +208,15 @@ void BluefruitLESerialDevice::lowEnergyServiceDiscovered(const QBluetoothUuid &u
         connect(m_service, &QLowEnergyService::characteristicWritten,
                 this, &BluefruitLESerialDevice::mycharacteristicWritten);
 
-//        connect(service, &QLowEnergyService::descriptorRead,
-//                this, &Device::descriptorRead);
-//        connect(service, &QLowEnergyService::descriptorWritten,
-//                this, &Device::descriptorWritten);
+//        connect(m_service, &QLowEnergyService::descriptorRead,
+//                this, &BluefruitLESerialDevice::descriptorRead);
+//        connect(m_service, &QLowEnergyService::descriptorWritten,
+//                this, &BluefruitLESerialDevice::descriptorWritten);
+
+
+        //void error(QLowEnergyService::ServiceError error);
+//        connect(m_service, &QLowEnergyService::error,
+//                this, &BluefruitLESerialDevice::serviceError);
 
 
         // discover details
@@ -256,11 +298,14 @@ void BluefruitLESerialDevice::serviceDetailsDiscovered(QLowEnergyService::Servic
             }
 
             writeCharacteristic = ch;
+
+            //QLowEnergyCharacteristic::PropertyTypes props = writeCharacteristic.properties();
         }
     }
 
     if (writeCharacteristic.isValid()) {
         setConnected(true);
+        writeData(QString("init").toUtf8());
     } else {
         qDebug("write characteristic not valid!! - abort");
         disconnectDevice();
@@ -277,7 +322,7 @@ void BluefruitLESerialDevice::serviceDetailsDiscovered(QLowEnergyService::Servic
 */
 void BluefruitLESerialDevice::mycharacteristicsUpdated(const QLowEnergyCharacteristic &c, const QByteArray &value)
 {
-    messageReceiver.messageReceived(QString(value));
+    messageReceiver.dataReceived(value);
 }
 
 
@@ -289,8 +334,37 @@ void BluefruitLESerialDevice::mycharacteristicRead(const QLowEnergyCharacteristi
 void BluefruitLESerialDevice::mycharacteristicWritten(const QLowEnergyCharacteristic &info, const QByteArray &value)
 {
     qDebug() << "mycharacteristicWritten: " << value;
+
+    bytessent += value.size();
+
+    if (value == dataSending) {
+        // ok send next...
+        if (dataToSend.isEmpty()) {
+            // sending done!
+
+            dataSending.clear();
+            if (!value.endsWith(messageReceiver.getPacketTerminatorOut())) {
+                m_service->writeCharacteristic(writeCharacteristic, messageReceiver.getPacketTerminatorOut(), QLowEnergyService::WriteWithResponse);
+            }
+
+        } else {
+            writeData(dataToSend);
+        }
+
+    } else if (!dataSending.isEmpty()) {
+        qDebug() << "send data does not match!";
+    } else {
+
+        qDebug() << "sent " << bytessent << " in " << startSending.restart() << " ms";
+
+    }
+
 }
 
+void BluefruitLESerialDevice::serviceError(QLowEnergyService::ServiceError error)
+{
+    qDebug() << "ERROR: " << error;
+}
 
 /*
  *
@@ -301,7 +375,24 @@ void BluefruitLESerialDevice::mycharacteristicWritten(const QLowEnergyCharacteri
 void BluefruitLESerialDevice::writeData(const QByteArray& data)
 {
     if (writeCharacteristic.isValid()) {
-        m_service->writeCharacteristic(writeCharacteristic, data, QLowEnergyService::WriteWithoutResponse);
+
+        // get the first 20 bytes
+        dataSending = data.left(20);
+        dataToSend = data.right(data.size() - 20);
+
+        if (dataSending.isEmpty()) {
+            qDebug() << "nothing to send";
+            return;
+        }
+
+        qDebug() << "writing: " << dataSending;
+        m_service->writeCharacteristic(writeCharacteristic, dataSending, QLowEnergyService::WriteWithResponse); //WriteWithoutResponse
+
+        auto err = m_service->error();
+        if (err !=  QLowEnergyService::NoError) {
+            qDebug() << "error: " << err;
+        }
+
     } else {
         qDebug() << "characterstic not valid: " << writeCharacteristic.uuid();
     }

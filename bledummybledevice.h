@@ -3,12 +3,15 @@
 
 #include <QBluetoothUuid>
 
-#include "deviceinfo.h"
+#include "bleserialdevice.h"
 
-class DummyBLEDevice : public DeviceInfo
+class BLEDummyDevice : public BLESerialDevice
 {
 public:
-    DummyBLEDevice();
+    BLEDummyDevice();
+    ~BLEDummyDevice() {
+        qDebug() << "----------- ~DummyBLEDevice";
+    }
 
     // overwrite functions
     virtual QString getAddress() const;
@@ -16,11 +19,14 @@ public:
 
     // deviceInfo interface
     virtual void connectDevice();
-    virtual void disconnectDevice();
+    virtual void disconnectDevice();    
 
 public slots:
     virtual void connectResult(const bool& status);
     virtual void writeData(const QByteArray& data) {}
+    virtual void testDevice() {
+        qDebug() << "TEST DuMMY";
+    }
 
 private:
     QString myAddress;
