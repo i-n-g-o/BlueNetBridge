@@ -6,7 +6,7 @@ import QtQuick.Layouts 1.3
 
 StatusBar {
 
-    id: statusbar
+    width: parent.width
     height: Screen.pixelDensity * 15
 
     Row {
@@ -21,33 +21,33 @@ StatusBar {
             text: "+"
 
             onClicked: {
-                console.log("aaaa");
-                device.addSomething();
+                // add a dummy device
+                device.addDummyDevice();
             }
         }
 
 
-        MyButton {
-            width: parent.height
-            height: parent.height
+//        MyButton {
+//            width: parent.height
+//            height: parent.height
 
-            text: "open"
+//            text: "open dialog"
 
-            onClicked: {
-                messageDialog.open()
-            }
-        }
+//            onClicked: {
+//                messageDialog.open()
+//            }
+//        }
 
-        MyButton {
-            width: parent.height
-            height: parent.height
+//        MyButton {
+//            width: parent.height
+//            height: parent.height
 
-            text: "clear"
+//            text: "clear\nsettings"
 
-            onClicked: {
-                device.clearSettings();
-            }
-        }
+//            onClicked: {
+//                device.clearSettings();
+//            }
+//        }
     }
 }
 

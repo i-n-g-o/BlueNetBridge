@@ -20,5 +20,11 @@ Button {
             gradient: !pressed ? btngradient1 : btngradient2
             radius: 10
         }
+        label: Label {
+            text: control.text
+            wrapMode: Text.Wrap
+            horizontalAlignment: Text.AlignHCenter | Text.AlignVCenter
+            //anchors.horizontalCenter: parent.parent.horizontalCenter
+        }
     }
 }

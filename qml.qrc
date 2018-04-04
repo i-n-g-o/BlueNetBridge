@@ -7,5 +7,11 @@
         <file>AppStatusBar.qml</file>
         <file>MyButton.qml</file>
         <file>ListViewDelegate.qml</file>
+        <file>ButtonStyleFlat.qml</file>
+        <file>ButtonMenuItem.qml</file>
+        <file>EmptyIndicator.qml</file>
+        <file>CheckboxMenuItem.qml</file>
+        <file>MyMessageDialog.qml</file>
+        <file>DropdownMenu.qml</file>
     </qresource>
 </RCC>

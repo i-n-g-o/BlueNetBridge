@@ -20,19 +20,19 @@ DEFINES += QT_DEPRECATED_WARNINGS
 
 SOURCES += main.cpp \
     devicecontroller.cpp \
-    deviceinfo.cpp \
     appcontroller.cpp \
     bluefruitleserialdevice.cpp \
-    dummybledevice.cpp \
-    messagereceiver.cpp
+    messagereceiver.cpp \
+    bleserialdevice.cpp \
+    bledummybledevice.cpp
 
 HEADERS += \
     devicecontroller.h \
-    deviceinfo.h \
     appcontroller.h \
     bluefruitleserialdevice.h \
-    dummybledevice.h \
-    messagereceiver.h
+    messagereceiver.h \
+    bleserialdevice.h \
+    bledummybledevice.h
 
 RESOURCES += qml.qrc
 
@@ -68,3 +68,14 @@ DISTFILES += \
     android/gradlew.bat
 
 ANDROID_PACKAGE_SOURCE_DIR = $$PWD/android
+
+ios {
+    setting.name = DEVELOPMENT_TEAM
+    setting.value = VAPJ2M8U5L
+    QMAKE_MAC_XCODE_SETTINGS += setting
+
+#    QMAKE_DEVELOPMENT_TEAM = VAPJ2M8U5L
+#    QMAKE_PROVISINOING_PROFILE = 27841dce-210b-45d4-b8a8-ca0e9611ec80
+#    QMAKE_TARGET_BUNDLE_PREFIX = i.n.g.o.app
+    QMAKE_INFO_PLIST = ios/Info.plist
+}
