@@ -9,5 +9,5 @@ appController::appController(QObject *parent) : QObject(parent)
 
 void appController::appStateChanged(Qt::ApplicationState state)
 {
-    qDebug() << "----------------------------------->>>>>  app state changed: " << state;
+    //qDebug() << "----------------------------------->>>>>  app state changed: " << state;
 }
