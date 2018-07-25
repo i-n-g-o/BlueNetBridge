@@ -164,10 +164,16 @@ void MessageReceiver::httpFinished()
 
 void MessageReceiver::dataToDevice(const QByteArray& dataToSend)
 {
-    if (dataToSend.endsWith(packetTerminatorOut)) {
-        emit data(dataToSend);
+    QList<QByteArray> list = dataToSend.split('\n');
+    QByteArray dts = list.join("\\n");
+
+    list = dts.split('\r');
+    dts = list.join("\\r");
+
+    if (dts.endsWith(packetTerminatorOut)) {
+        emit data(dts);
     } else {
-        QByteArray d = dataToSend + packetTerminatorOut;
+        QByteArray d = dts + packetTerminatorOut;
         emit data(d);
     }
 }
